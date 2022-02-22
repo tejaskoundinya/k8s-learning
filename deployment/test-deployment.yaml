@@ -37,22 +37,68 @@ spec:
     tier: frontend
   type: LoadBalancer
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-backend-app
+  labels:
+    app: test-backend-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test-backend-app
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: test-backend-app
+        tier: backend
+    spec:
+      containers:
+      - name: testbackend
+        image: localhost:5000/testbackend:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-backend-app
+  labels:
+    app: test-backend-app
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    app: test-backend-app
+    tier: backend
+  type: LoadBalancer
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: test-react-app-ingress
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
     - host: test-react-app.local
       http:
         paths:
-          - path: /
+          - path: /()(.*)
             pathType: Prefix
             backend:
               service:
                 name: test-react-app
                 port:
                   number: 80
+          - path: /backend(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: test-backend-app
+                port:
+                  number: 8080
